@@ -1,4 +1,5 @@
-import Vue from 'vue'
+import Vue from 'vue/dist/vue.js'
+
 
 new Vue({
     el: '#example',
@@ -8,13 +9,13 @@ new Vue({
             tags: [{text: 'hello', id:0}, {text: 'world', id:1}],
         }
     },
-    events: {
-        'focus.vue-tagsinput'($el) {
-            console.log('active');
-        },
-        'blur.vue-tagsinput'($el) {
-            console.log(`inactive input with value: ${$el.value}`);
-        }
+    mounted(){
+        // _eventBus.$on('focus.vue-tagsinput',($el) => {
+        //     console.log('focus')
+        // })
+        // _eventBus.$on('blur.vue-tagsinput',($el) => {
+        //     console.log(`inactive input with value: ${$el.value}`)
+        // })
     },
     methods: {
         insertTag(text) {

@@ -3,7 +3,7 @@
         <input type="text"
             :class="klass.input"
             :style="{width: base + charLen(text) + 'ch'}"
-            v-el:input
+            ref='input'
             v-model="text"
             @mousedown="preventNativeActive"
             @blur="finish(true)"
@@ -52,16 +52,16 @@ export default {
     watch: {
         typing(val) {
             val && Vue.nextTick(_ => {
-                let $el = this.$els.input
+                let $el = this.$refs.input
                 $el.focus()
-                this.$dispatch(E`focus`, $el)
+                _tagsInputEventBus.$emit([E`focus`], $el)
             })
         }
     },
-    events: {
-        [_E`active`](index) {
+    mounted(){
+        _tagsInputEventBus.$on([_E`active`],index => {
             this.typing = index === this.index
-        }
+        })
     },
     methods: {
         preventNativeActive(e) {
@@ -73,12 +73,12 @@ export default {
         finish(inactive = true) {
             let result = this.text.trim()
             if (result) {
-                this.$dispatch(_E`insert`, this.index, result)
+                _tagsInputEventBus.$emit([_E`insert`], this.index, result)
                 this.text = ''
             }
             if (inactive === true) {
                 this.typing = false
-                this.$dispatch(E`blur`, this.$els.input)
+                _tagsInputEventBus.$emit([E`blur`], this.$refs.input)
             }
         },
         charLen(str) {
@@ -89,18 +89,18 @@ export default {
             return charNum
         },
         keyPress(e) {
-            let $input = this.$els.input
+            let $input = this.$refs.input
             let cursor = $input.selectionStart
             let valLen = $input.value.length
             let key = e.keyCode
             let native = false
 
             if (key === KEY_CODE.RIGHT && valLen === 0) {
-                this.$dispatch(_E`activeOther`, this.index + 1)
+                _tagsInputEventBus.$emit([_E`activeOther`], this.index + 1)
             } else if (key === KEY_CODE.LEFT && valLen === 0) {
-                this.$dispatch(_E`activeOther`, this.index - 1)
+                _tagsInputEventBus.$emit([_E`activeOther`], this.index - 1)
             } else if (key === KEY_CODE.BACKSPACE && cursor === 0) {
-                this.$dispatch(_E`remove`, this.index - 1)
+                _tagsInputEventBus.$emit([_E`remove`], this.index - 1)
             } else if (key === KEY_CODE.TAB) {
                 this.finish(false)
             } else native = true

@@ -10,6 +10,9 @@ var config = {
         filename: 'vue-tagsinput.js',
         libraryTarget: 'commonjs'
     },
+    alias: {
+        'vue': 'vue/dist/vue.js'
+    },
     module: {
         loaders: [
             {test: /\.js$/, include: path.resolve(__dirname, 'src/'), loader: 'babel'},

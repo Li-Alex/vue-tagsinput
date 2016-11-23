@@ -3,14 +3,14 @@
         @mousedown.self.prevent
         @click.self="inputLast"
         >
-        <template v-for="(index, item) in tags" :track-by="trackBy">
+        <span v-for="(item, index) in selfTags" :key="item[trackBy]">
             <typing :index="index"></typing>
             <tag
-                :text="item | getText"
-                :remove="item | getRemoveHandle index"
-                :valid="item | validate">
+                :text="getText(item)"
+                :remove="getRemoveHandle(item,index)"
+                :valid="validate(item)">
             </tag>
-        </template>
+        </span>
         <typing :index="length">
             <span v-if="placeholder" :class="klass.placeholder">{{placeholder}}</span>
         </typing>
@@ -34,11 +34,15 @@
 }
 </style>
 <script>
+import Vue from 'vue'
 import {_E, klass} from './lib'
+//
+let _tagsInputEventBus = new Vue()
+window._tagsInputEventBus = _tagsInputEventBus
+
 export default {
     props: {
         tags: {
-            twoWay: true,
             type: Array,
             required: true
         },
@@ -47,25 +51,31 @@ export default {
         insert: {type: Function, default: text => text},
         render: {type: Function, default: item => item},
         readOnly: {type: Function, default: item => false},
-        trackBy: {type: String, default: '$index'},
+        trackBy: {type: String, default: 'index'},
         validator: [String, Function]
+    },
+    data(){
+        return{
+            selfTags: []
+        }
     },
     computed: {
         length() {
-            return this.tags.length
+            return this.selfTags.length
         }
     },
-    events: {
-        [_E`insert`](index, text) {
+    mounted(){
+        this.selfTags = this.tags
+        _tagsInputEventBus.$on([_E`insert`],(index,text) => {
             let tag = this.insert(text)
-            tag && !this.dedupe(tag) && this.tags.splice(index, 0, tag)
-        },
-        [_E`activeOther`](index) {
+            tag && !this.dedupe(tag) && this.selfTags.splice(index, 0, tag)
+        })
+        _tagsInputEventBus.$on([_E`activeOther`],(index) => {
             index >= 0
             && index <= this.length
-            && this.$broadcast(_E`active`, index)
-        },
-        [_E`remove`]: 'removeTag'
+            && _tagsInputEventBus.$emit([_E`active`], index)
+        })
+        _tagsInputEventBus.$on([_E`remove`], this.removeTag)
     },
     methods: {
         removeTag(index) {
@@ -75,17 +85,15 @@ export default {
             }
         },
         inputLast() {
-            this.$broadcast(_E`active`, this.length)
+            _tagsInputEventBus.$emit([_E`active`], this.length)
         },
         dedupe(tag) {
-            if (this.trackBy === '$index') return this.tags.includes(tag)
+            if (this.trackBy === 'index') return this.tags.includes(tag)
             else {
                 let field = tag[this.trackBy]
                 return this.tags.some(item => item[this.trackBy] === field)
             }
-        }
-    },
-    filters: {
+        },
         getText(item) {
             return this.render(item)
         },
